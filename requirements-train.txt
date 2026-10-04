@@ -1,0 +1,8 @@
+# Pipeline completo (preparación de datos, entrenamiento, evaluación y exportación)
+-r requirements.txt
+scipy>=1.11
+scikit-learn>=1.4
+torch>=2.3
+onnx>=1.16
+onnxscript>=0.1
+matplotlib>=3.8

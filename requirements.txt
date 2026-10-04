@@ -1,0 +1,8 @@
+# App Streamlit (solo inferencia: ONNX Runtime, sin PyTorch ni OpenEye)
+numpy>=1.26
+pandas>=2.2
+rdkit>=2024.9
+onnxruntime>=1.18
+streamlit>=1.50
+plotly>=5.20
+pillow>=10.0

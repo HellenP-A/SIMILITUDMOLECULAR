@@ -1,0 +1,27 @@
+# Publica la app web estática (carpeta docs/) en la rama gh-pages → GitHub Pages
+name: Publicar GitHub Pages
+on:
+  push:
+    branches: [main]
+    paths: ["docs/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publicar docs/ en gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          touch docs/.nojekyll
+          git add -f docs/.nojekyll
+          TREE=$(git write-tree --prefix=docs/)
+          PARENT=""
+          if git ls-remote --exit-code origin refs/heads/gh-pages >/dev/null; then
+            git fetch --depth=1 origin gh-pages && PARENT=$(git rev-parse FETCH_HEAD)
+          fi
+          COMMIT=$(git commit-tree $TREE ${PARENT:+-p $PARENT} -m "Publica app web desde ${GITHUB_SHA::7}")
+          git push origin $COMMIT:refs/heads/gh-pages

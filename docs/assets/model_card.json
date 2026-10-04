@@ -1,0 +1,162 @@
+{
+ "name": "Siamese CNN multi-métrica — benzimidazoles anti-Leishmania",
+ "metrics": [
+  "tanimoto_2d",
+  "cosine_2d",
+  "shape_3d",
+  "combo_3d"
+ ],
+ "metric_labels": {
+  "tanimoto_2d": "Tanimoto 2D",
+  "cosine_2d": "Coseno 2D",
+  "shape_3d": "Shape 3D",
+  "combo_3d": "Combo 3D"
+ },
+ "default_weights": {
+  "tanimoto_2d": 0.35,
+  "cosine_2d": 0.25,
+  "shape_3d": 0.2,
+  "combo_3d": 0.2
+ },
+ "config": {
+  "vocab_size": 73,
+  "n_metrics": 4,
+  "emb_dim": 64,
+  "channels": 128,
+  "kernels": [
+   3,
+   5,
+   7
+  ],
+  "out_dim": 256,
+  "hidden": 256,
+  "dropout": 0.15
+ },
+ "parameters": 835908,
+ "best_epoch": 53,
+ "max_len": 128,
+ "train_molecules": 21777,
+ "web_domain_molecules": 6000,
+ "evaluation": {
+  "val": {
+   "r2": 0.9083230442943144,
+   "spearman": 0.9161538084957301,
+   "mae": 0.03026094437040651,
+   "rmse": 0.042102519702743854,
+   "pearson": 0.9587415727808346,
+   "kendall": 0.775248730092799
+  },
+  "test": {
+   "r2": 0.9287611209569808,
+   "spearman": 0.9401872321349328,
+   "mae": 0.028254217089062516,
+   "rmse": 0.03831571598398617,
+   "pearson": 0.9680351499079208,
+   "kendall": 0.8075831243927762
+  },
+  "test_tta": {
+   "r2": 0.9296994967026289,
+   "spearman": 0.9415802962645548,
+   "mae": 0.028224623648111978
+  },
+  "test_per_metric": {
+   "tanimoto_2d": {
+    "r2": 0.9645955930374058,
+    "mae": 0.02122796917163174,
+    "rmse": 0.030603740713416594,
+    "pearson": 0.9878893380596695,
+    "spearman": 0.9713346858076167,
+    "kendall": 0.8656783279264793,
+    "n": 44374
+   },
+   "cosine_2d": {
+    "r2": 0.9493399739195404,
+    "mae": 0.029163463902790104,
+    "rmse": 0.03726101045728535,
+    "pearson": 0.9856155529536845,
+    "spearman": 0.9712046778474387,
+    "kendall": 0.8647110305304782,
+    "n": 44374
+   },
+   "shape_3d": {
+    "r2": 0.8860019743078947,
+    "mae": 0.03375084342628665,
+    "rmse": 0.044683461828845715,
+    "pearson": 0.9417347064628252,
+    "spearman": 0.9212660341643066,
+    "kendall": 0.7668905499226051,
+    "n": 44374
+   },
+   "combo_3d": {
+    "r2": 0.9188604455456747,
+    "mae": 0.02875621809173942,
+    "rmse": 0.04007890755996017,
+    "pearson": 0.9594700986295992,
+    "spearman": 0.9025157872388572,
+    "kendall": 0.739925100338173,
+    "n": 44374
+   }
+  },
+  "ranking_test": {
+   "model": {
+    "spearman": 0.9574479010597976,
+    "ndcg@10": 0.9799598585147935,
+    "precision@10": 0.6499999999999999,
+    "ndcg@50": 0.986579394667222,
+    "precision@50": 0.785,
+    "ndcg@100": 0.9880106156081999,
+    "precision@100": 0.8141666666666668
+   },
+   "baseline_tanimoto_only": {
+    "spearman": 0.8704251130137769,
+    "ndcg@10": 0.980344718820155,
+    "precision@10": 0.6916666666666668,
+    "ndcg@50": 0.9825668179138733,
+    "precision@50": 0.7533333333333333,
+    "ndcg@100": 0.9827588250914615,
+    "precision@100": 0.7791666666666668
+   }
+  },
+  "sanity": {
+   "identity_canonical_mean": {
+    "tanimoto_2d": 1.0,
+    "cosine_2d": 1.0,
+    "shape_3d": 0.9999948143959045,
+    "combo_3d": 1.0
+   },
+   "identity_random_smiles_mean": {
+    "tanimoto_2d": 0.9999993443489075,
+    "cosine_2d": 0.9999854564666748,
+    "shape_3d": 0.9999334812164307,
+    "combo_3d": 0.9999874234199524
+   },
+   "identity_score_min": 0.999936032295227,
+   "symmetry_max_abs_diff": 0.0,
+   "smiles_invariance_mean_std": 0.007818312384188175
+  }
+ },
+ "applicability_domain": {
+  "thresholds": {
+   "alto": 0.5,
+   "medio": 0.3
+  },
+  "mae_by_level": {
+   "alto": 0.025930427326890007,
+   "medio": 0.02886573061565402,
+   "bajo": 0.02954471417940219
+  },
+  "pairs_by_level": {
+   "alto": 28512,
+   "medio": 9624,
+   "bajo": 1308
+  }
+ },
+ "pia02_reference": {
+  "r2": 0.9353,
+  "spearman": 0.9724,
+  "mae": 0.018,
+  "pairs": 48462,
+  "parameters": 399300,
+  "validation": "aleatoria a nivel de par (interna)"
+ }
+}
