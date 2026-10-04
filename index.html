@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Similitud Molecular · Benzimidazoles anti-Leishmania</title>
+  <meta name="description" content="Ranking de similitud molecular multi-métrica (Tanimoto, Coseno, Shape 3D, Combo 3D) contra 12 benzimidazoles anti-Leishmania con una red neuronal Siamese que corre en el navegador.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧬</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=2">
+  <script src="https://cdn.jsdelivr.net/npm/@rdkit/rdkit@2026.9.1/dist/RDKit_minimal.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.30.0/dist/ort.min.js"></script>
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-inner">
+    <div>
+      <h1>Similitud molecular multi-métrica</h1>
+      <p class="sub">Compare un compuesto contra <b>12 benzimidazoles anti-<i>Leishmania</i></b> (USAL) con una red neuronal Siamese que predice
+        <b>Tanimoto 2D</b>, <b>Coseno 2D</b>, <b>Shape 3D</b> y <b>Combo 3D</b>. Todo se ejecuta en su navegador.</p>
+    </div>
+    <div id="status" class="status loading"><span class="dot"></span><span id="status-text">Cargando RDKit y el modelo…</span></div>
+  </div>
+  <nav class="wrap tabs" role="tablist">
+    <button class="tab active" data-tab="analizar" role="tab">Analizar</button>
+    <button class="tab" data-tab="lote" role="tab">Lote</button>
+    <button class="tab" data-tab="referencias" role="tab">Referencias</button>
+    <button class="tab" data-tab="desempeno" role="tab">Desempeño del modelo</button>
+    <button class="tab" data-tab="acerca" role="tab">Acerca de</button>
+  </nav>
+</header>
+
+<main class="wrap">
+  <div class="note">Mide <b>similitud estructural, no actividad biológica</b>. Es un filtro de priorización: no reemplaza ensayos ni el criterio experto.</div>
+
+  <!-- ============================== ANALIZAR -->
+  <section id="tab-analizar" class="panel active">
+    <div class="card input-card">
+      <label for="smiles">SMILES del compuesto</label>
+      <div class="input-row">
+        <input id="smiles" type="text" spellcheck="false" autocomplete="off" value="CCCSc1ccc2[nH]c(NC(=O)OC)nc2c1">
+        <button id="run" class="primary" disabled>Calcular</button>
+      </div>
+      <div class="chips" id="examples"></div>
+      <details class="settings">
+        <summary>Ajustes: pesos del Score y aumento en inferencia</summary>
+        <div class="weights" id="weights"></div>
+        <div class="row-inline">
+          <label for="naug">Escrituras SMILES promediadas (TTA): <b id="naug-v">8</b></label>
+          <input id="naug" type="range" min="1" max="16" value="8">
+        </div>
+      </details>
+    </div>
+
+    <div id="result" class="hidden">
+      <div class="grid-3">
+        <div class="card mol-card">
+          <div id="query-svg" class="svg-box"></div>
+          <div class="mono small" id="query-smiles"></div>
+        </div>
+        <div class="card">
+          <h3>Dominio de aplicabilidad</h3>
+          <div id="domain"></div>
+          <h3 class="mt">Verificación 2D exacta</h3>
+          <p class="small muted">Tanimoto y Coseno calculados con RDKit en el navegador vs lo que predice la red.</p>
+          <div id="verify2d"></div>
+        </div>
+        <div class="card">
+          <h3>Descriptores (RDKit)</h3>
+          <table class="kv" id="descriptors"></table>
+        </div>
+      </div>
+
+      <h2>Top 3 referencias</h2>
+      <div class="grid-3" id="top3"></div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2>Ranking completo</h2>
+          <button id="dl" class="ghost">Descargar CSV</button>
+        </div>
+        <div class="table-wrap"><table class="rank" id="ranking"></table></div>
+        <p class="small muted">Valores = promedio de las escrituras SMILES; ± = desviación estándar (incertidumbre del modelo). Score = suma ponderada de las 4 métricas.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== LOTE -->
+  <section id="tab-lote" class="panel">
+    <div class="card">
+      <label for="batch">Varios compuestos — un SMILES por línea, opcionalmente seguido de un nombre</label>
+      <textarea id="batch" rows="8" spellcheck="false"></textarea>
+      <div class="row-inline">
+        <input type="file" id="batch-file" accept=".csv,.txt">
+        <button id="batch-run" class="primary" disabled>Calcular lote</button>
+        <button id="batch-dl" class="ghost hidden">Descargar CSV</button>
+      </div>
+    </div>
+    <div class="card hidden" id="batch-card"><div class="table-wrap"><table class="rank" id="batch-table"></table></div></div>
+  </section>
+
+  <!-- ============================== REFERENCIAS -->
+  <section id="tab-referencias" class="panel">
+    <p class="muted">12 benzimidazoles ensayados en laboratorio por la Universidad de Salamanca, usados como referencia del ranking.</p>
+    <div class="ref-grid" id="ref-grid"></div>
+  </section>
+
+  <!-- ============================== DESEMPEÑO -->
+  <section id="tab-desempeno" class="panel">
+    <div class="kpis" id="kpis"></div>
+    <div class="card"><h2>Comparación con el PIA-02</h2><div class="table-wrap"><table class="rank" id="perf-compare"></table></div></div>
+    <div class="card"><h2>Por métrica — test externo (scaffolds no vistos)</h2><div class="table-wrap"><table class="rank" id="perf-metric"></table></div></div>
+    <div class="card"><h2>Calidad del ranking por referencia</h2>
+      <div class="table-wrap"><table class="rank" id="perf-rank"></table></div>
+      <p class="small muted">NDCG@k y Precision@k miden cuánto coincide el top-k del modelo con el top-k real del Score multi-métrica. La línea base ordena solo por Tanimoto 2D exacto, como haría una búsqueda en PubChem/ChEMBL.</p>
+    </div>
+    <div class="card"><h2>¿Aporta información 3D más allá del 2D?</h2><div class="table-wrap"><table class="rank" id="perf-3d"></table></div>
+      <p class="small muted">Comparación contra una regresión lineal que intenta deducir Shape/Combo 3D a partir de Tanimoto y Coseno exactos.</p></div>
+    <div class="card"><h2>Curvas y dispersión</h2>
+      <img src="assets/scatter_test.png" alt="Predicho vs real por métrica en el test externo" loading="lazy">
+      <div class="grid-2"><img src="assets/training.png" alt="Curvas de entrenamiento" loading="lazy"><img src="assets/applicability_domain.png" alt="Error según dominio de aplicabilidad" loading="lazy"></div>
+    </div>
+  </section>
+
+  <!-- ============================== ACERCA -->
+  <section id="tab-acerca" class="panel">
+    <div class="card prose">
+      <h2>Qué hace</h2>
+      <p>Dado un compuesto en notación SMILES, la red Siamese (encoder CNN-1D compartido con kernels 3, 5 y 7) genera un embedding de la consulta y de cada referencia y predice las cuatro métricas de similitud. El <b>Score</b> combina las cuatro: <code>0.35·Tanimoto + 0.25·Coseno + 0.20·Shape + 0.20·Combo</code> (pesos ajustables).</p>
+      <h2>Las cuatro métricas</h2>
+      <ul>
+        <li><b>Tanimoto 2D</b> — fragmentos compartidos entre fingerprints Morgan ECFP4 (2048 bits).</li>
+        <li><b>Coseno 2D</b> — ángulo entre los mismos fingerprints; lectura complementaria del parecido 2D.</li>
+        <li><b>Shape 3D</b> — solapamiento de volumen gaussiano del mejor alineamiento de confórmeros (enfoque ROCS).</li>
+        <li><b>Combo 3D</b> — (Shape + Color)/2, donde Color mide la coincidencia de grupos farmacofóricos (donadores/aceptores, cargas, anillos).</li>
+      </ul>
+      <h2>Mejoras de esta versión</h2>
+      <ul>
+        <li>Validación <b>externa por scaffold</b>: el test usa moléculas con esqueletos nunca vistos en entrenamiento.</li>
+        <li>3D real para todos los pares con <b>RDKit rdShapeAlign</b> (open source, mismo enfoque que ROCS) y ensambles de 10 confórmeros; pipeline reproducible sin licencia.</li>
+        <li>Más datos: ChEMBL del PIA-02 completo + fármacos aprobados y compuestos diversos de ChEMBL 35 como señuelos.</li>
+        <li>Pares de identidad y aumento con SMILES aleatorizados: identidad ≈ 1 sin atajos y predicciones invariantes a la escritura.</li>
+        <li>Simetría exacta por construcción, incertidumbre por TTA, dominio de aplicabilidad y métricas de ranking (NDCG@k, Precision@k).</li>
+      </ul>
+      <h2>Límites</h2>
+      <p>Mide similitud, no actividad biológica. Es más confiable para moléculas cercanas al dominio (benzimidazoles y afines); fuera de él la predicción es extrapolación y debe interpretarse con cautela.</p>
+      <p class="small muted">Autora: Hellen Pamela Aguilar Noguera · PIA-02 · CENFOTEC + Universidad de Salamanca · Código: <a href="https://github.com/HellenP-A/SIMILITUDMOLECULAR">github.com/HellenP-A/SIMILITUDMOLECULAR</a></p>
+    </div>
+  </section>
+</main>
+<footer class="wrap small muted">Modelo ONNX + RDKit.js · sin servidor: sus SMILES no salen de su navegador.</footer>
+<script src="app.js?v=2"></script>
+</body>
+</html>
